@@ -55,7 +55,7 @@ cd "${LINT_PATH}"
 
 # Fix for clang-tidy
 # --no-gnu-unique flag forced for GCC by the project, but unsupported by Clang
-sed -i -r -e 's/--no-gnu-unique//' "$TESTING_PATH/compile_commands.json"
+sed -i -r -e 's/--no-gnu-unique//' compile_commands.json
 
 # Firs build required to generate d3d*/dxgi shader headers
 ninja
