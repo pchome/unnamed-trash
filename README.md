@@ -18,7 +18,7 @@ Make sure you moved final result to /dev/null, if you not the author of the code
 2. Create `compile_flags.txt.in` file with very basic compiler flags list (`@PROJECT_PATH@` will be replaced with absolute path to source root).
 3. Copy `clang-tidy-genpatch.sh.in` and `clang-tidy.sh.in` into projects source root.
 4. Commit changes, or add excludes to `.gitignore` file.
-5. Init build directory (`meson build`) (and maybe make build at least once to generate all required sources).
+5. Init build directory (`meson build -Denable_lint=true --unity=on`) (and maybe make build at least once to generate all required sources).
 6. Goto build directory and run e.g. `sh clang-tidy-genpatch.sh modernize` (this will run all `*modernize*` checks).
 7. Wait for `clang-tidy-patches/*.patch` and `clang-tidy-logs/*.log`.
 
