@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# CHECKS
+# https://clang.llvm.org/extra/clang-tidy/checks/list.html
+# https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md
+
+RUN_CLANG_TIDY_PATH="/usr/lib/llvm/@CLANG_VERSION@/share/clang"
+PROJECT_PATH="@PROJECT_PATH@"
+TESTING_PATH="@TESTING_PATH@"
+LOG_PATH="@TESTING_PATH@/clang-tidy-logs"
+
+mkdir -p "${LOG_PATH}"
+
+${RUN_CLANG_TIDY_PATH}/run-clang-tidy.py \
+  $(for s in `cat compile_flags.txt`; do echo -n "-extra-arg=$s "; done) \
+  -header-filter='.*' \
+  -quiet | tee "${LOG_PATH}/clang-tidy.log"

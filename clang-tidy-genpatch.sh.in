@@ -1,0 +1,96 @@
+#!/bin/sh
+
+# CHECKS
+# https://clang.llvm.org/extra/clang-tidy/checks/list.html
+# https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md
+
+RUN_CLANG_TIDY_PATH="/usr/lib/llvm/@CLANG_VERSION@/share/clang"
+PROJECT_PATH="@PROJECT_PATH@"
+TESTING_PATH="@TESTING_PATH@"
+PATCH_PATH="@TESTING_PATH@/clang-tidy-patches"
+LOG_PATH="@TESTING_PATH@/clang-tidy-logs"
+
+mkdir -p "${LOG_PATH}"
+
+custom_checks=""
+
+[[ ! -z "$1" ]] \
+  && custom_checks="-*,*$1*" \
+  || echo "Default checks selected"
+
+
+# List of checks to be applied
+checks="$(clang-tidy -list-checks -quiet -checks=$custom_checks)"
+
+# Commit changes
+COMMITS=0
+CHECKS_DONE=0
+function commit_changes {
+  cd "$PROJECT_PATH"
+  if [[ ! z"$(git status -s | grep -v '??')" == z"" ]]; then
+    echo "Commit: $1"
+    git commit -a -m "\"[meta] clang-tidy: $1\"" && let COMMITS+=1
+  fi
+  cd "$TESTING_PATH"
+}
+
+
+# Generate patches
+function generate_patches {
+  cd "$PROJECT_PATH"
+  echo "Generating patches for $COMMITS commits"
+  git format-patch -$COMMITS
+
+  mkdir -p "$PATCH_PATH"
+  mv *.patch "$PATCH_PATH/"
+
+  # TODO: prevent loosing own work
+
+  #echo "Dropping changes from git history"
+  #git reset origin/HEAD
+  #git checkout -- .
+
+  cd "$TESTING_PATH"
+}
+
+# Run clang-tudy check
+function run_check {
+  cd "$TESTING_PATH"
+  ${RUN_CLANG_TIDY_PATH}/run-clang-tidy.py \
+    $(for s in `cat compile_flags.txt`; do echo -n "-extra-arg=$s "; done) \
+    -checks="-*,$1" \
+    -header-filter='.*' \
+    -fix \
+    -quiet
+}
+
+# Prepare
+commit_changes "Pre-check commit"
+
+# Perform checks
+for clang_check in $checks; do
+  [[ "$clang_check" =~ "-" ]] || continue
+
+  # Performing check
+  run_check "$clang_check" > "${LOG_PATH}/${clang_check}.log"
+
+  # Commit changes
+  commit_changes "$clang_check"
+
+  # Count
+  let CHECKS_DONE+=1
+done
+
+
+# Performing ultimate check
+if [[ $CHECKS_DONE -gt 1 ]]; then
+  echo "Performing ultimate check"
+  run_check "*$1*" > "${LOG_PATH}/clang-tidy-genpatch-final.log"
+fi
+
+# Commit changes
+commit_changes "fix $1 checks"
+
+
+# Generate patches
+[[ $COMMITS -gt 0 ]] && generate_patches

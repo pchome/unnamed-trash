@@ -1,0 +1,3 @@
+-isystem@PROJECT_PATH@/include
+
+-I@PROJECT_PATH@/src

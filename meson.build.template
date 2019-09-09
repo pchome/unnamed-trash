@@ -1,0 +1,14 @@
+
+if get_option('enable_lint')
+  flags_data = configuration_data()
+  flags_data.set('PROJECT_PATH', meson.source_root())
+  configure_file(input: 'compile_flags.txt.in', output: 'compile_flags.txt', configuration: flags_data)
+
+  scripts_data = configuration_data()
+  clang_version = find_program('clang-tidy').path().split('/')[-3]
+  scripts_data.set('CLANG_VERSION', clang_version)
+  scripts_data.set('PROJECT_PATH', meson.source_root())
+  scripts_data.set('TESTING_PATH', meson.build_root())
+  configure_file(input: 'clang-tidy.sh.in',          output: 'clang-tidy.sh',          configuration: scripts_data)
+  configure_file(input: 'clang-tidy-genpatch.sh.in', output: 'clang-tidy-genpatch.sh', configuration: scripts_data)
+endif
